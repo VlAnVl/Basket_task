@@ -1,0 +1,107 @@
+fieldset{
+    width: 30%; 
+    margin-right: auto; 
+    margin-left: auto; 
+    text-align: center;
+    font-size: 14pt;
+}
+
+.bnt_enter{
+    width: 20%;
+}
+
+.main_layout{
+    width: 70%; 
+    margin-right: auto; 
+    margin-left: auto; 
+}
+
+.greeting{
+    text-align: center;
+    font-size: 20pt;
+}
+
+th{
+    font-size: 16pt;
+}
+td{
+    font-size: 14pt;
+}
+
+.block{
+    overflow-y:scroll;
+    overflow:hidden; 
+}
+
+.left_block{
+    cursor: pointer;
+    color: black; 
+    border: 2px solid lightslategray; 
+    padding: 10px;
+}
+
+.left_block:hover
+{
+    background-color: rgb(195, 235, 195); 
+}
+
+.left_block:focus
+{
+    border-color: rgb(109, 153, 109);
+}
+
+.right_block{
+    color: black; 
+    border: 2px solid lightslategray; 
+    padding: 10px;
+}
+
+.right_block:hover
+{
+    background-color: rgb(235, 204, 195); 
+}
+
+.right_block:focus
+{
+    border-color: rgb(153, 109, 109);
+}
+
+ul{
+    list-style: none;
+    
+}
+
+.info_obj{
+    border: 2px solid lightslategray;
+
+}
+
+.text_faculty{
+    float: right;
+    width: 10%;
+    text-align: center;
+    border: 1px solid lightslategray;
+}
+
+li{
+    margin-top: 1%;
+    margin-bottom: 1%;
+    padding-top: 1%;
+    padding-bottom: 1%;
+    padding-left: 2%;
+}
+
+.btn{
+    margin: 0px 0px 0px 30px;
+}
+
+.arrow{
+    width: 8px;
+    cursor: pointer;
+}
+
+.delete{
+    width: 10px;
+    float: right;
+    cursor: pointer;
+}

@@ -1,0 +1,401 @@
+{% extends 'template.html' %}
+
+{% block title %}
+<title>Корзина</title>
+{% endblock %}
+
+{% block body %}
+<form>
+    <div class="greeting"><label>Добро пожаловать, {{name}}!</label></div>
+    <table class="main_layout">
+        <thead>
+            <tr>
+                <th>Направления</th>
+                <th>Выбранные направления</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td></td>
+                <td style="text-align: right;">
+                    <button id = "btn_delete" class="btn">Очистить</button> <button id = "btn_save" class="btn">Сохранить</button></div>
+                </td>
+            </tr>   
+            <tr>
+                <td> 
+                    <!--НАПРАВЛЕНИЯ-->
+                    <div class = 'block' id = "directions"></div> 
+                </td>
+                <td> 
+                    <!--КОРЗИНА-->
+                    <div class = 'block' id = "baskets"></div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</form>
+{% endblock %}
+{% block script %}
+<script>
+
+    let id_counter = 0 //счетчик объектов
+
+    //НАПРАВЛЕНИЯ
+    let data_direction = convert_to_map_direction(JSON.parse('{{direction | tojson | safe}}'))
+    let data_profile = convert_to_map_direction(JSON.parse('{{profile | tojson | safe}}'))
+    let dict_direction = new Map() //словарь направлений
+    let id_direction = new Map() //словарь div - направление
+    let id_profile = new Map() //словарь div - профили
+    let block_direction = document.getElementById("directions")
+    ol_element_dir = create_block(data_direction, data_profile, false, 'left_block', dict_direction, id_direction, id_profile)
+    block_direction.appendChild(ol_element_dir)
+    
+    //КОРЗИНА
+
+    let data_basket = convert_to_map_basket(JSON.parse('{{basket | tojson | safe}}'))
+    let data_basket_profile = convert_to_map_basket(JSON.parse('{{basket_profile | tojson | safe}}'))
+    let dict_basket = new Map() //словарь корзины 
+    let id_basket = new Map() //словарь div - корзина
+    let id_basket_profile = new Map() //словарь div - профили
+    let block_baskets = document.getElementById("baskets")
+    ol_element_bas = create_block(data_basket, data_basket_profile, true, 'right_block', dict_basket, id_basket, id_basket_profile)
+    block_baskets.appendChild(ol_element_bas)
+
+    append_arrow_icon()
+
+    document.getElementById("btn_save").addEventListener('click', save_data)
+    document.getElementById("btn_delete").addEventListener('click', delete_data)
+
+    
+    function create_block(data_dir, data_pro, isBasket, class_name, dict_dirs, id_dirs, id_pros)   
+    {
+        let ol_element = document.createElement("ol")
+        for (let dd of data_dir.keys()) {
+            let block = create_box(dd, data_dir, data_pro, id_pros, isBasket, class_name)
+            id_dirs.set(block.id, +dd)
+            dict_dirs.set(+dd, [])
+            for (let dp of data_pro.keys())
+                if (data_pro.get(dp)[2] == dd){
+                    let temp = dict_dirs.get(+dd)
+                    temp.push(+dp)
+                    dict_dirs.set(+dd, temp)
+                }
+            ol_element.appendChild(block) 
+        }
+        return ol_element
+    } 
+
+    function create_box(id_dir, data_dir, data_pro, id_pros, isBasket, class_name)
+    {
+        let div_dir = document.createElement('li')
+        div_dir.className = class_name
+        div_dir.id = `div_${id_counter}`
+        id_counter++
+        let div_txt_dir = document.createElement('span')
+        div_txt_dir.id = `txt_${div_dir.id}`
+        div_txt_dir.textContent = ` ${data_dir.get(id_dir)[0]} ${data_dir.get(id_dir)[1]}`
+        div_dir.appendChild(div_txt_dir)
+        if (isBasket){      
+            let icon = delete_icon()
+            icon.addEventListener('click', delete_obj)
+            div_dir.appendChild(icon)      
+        }
+        else
+        {
+            div_dir.addEventListener('click', add_obj)
+        }
+        let ul_element = document.createElement("ul")
+        
+        for (let d of data_pro.keys()){
+            if (data_pro.get(d)[2] == id_dir){
+                let div_pro = document.createElement('li')
+                div_pro.id = `div_${id_counter}`
+                div_pro.className = 'info_obj'
+                id_pros.set(div_pro.id, +d)
+                let div_txt_pro = document.createElement('span')
+                div_txt_pro.id = `txt_${div_pro.id}`
+                div_txt_pro.textContent = ` ${data_pro.get(d)[0]}`
+                let div_txt_faculty = document.createElement('span')
+                div_txt_faculty.className = 'text_faculty'
+                div_txt_faculty.textContent = ` ${data_pro.get(d)[1]}`
+                div_txt_pro.appendChild(div_txt_faculty)
+                div_pro.appendChild(div_txt_pro)
+                ul_element.appendChild(div_pro)
+                id_counter++
+            }
+        }
+        div_dir.appendChild(ul_element)
+        
+        return div_dir
+    }
+
+    function delete_icon()
+    {
+        let icon = document.createElement('img')
+        icon.className = "delete"
+        icon.src = "{{url_for('static', filename='img/x.png')}}"
+        return icon
+    }
+
+    function delete_obj(event)
+    {   
+        let id_dir = id_basket.get(this.parentNode.id)
+        let list_profile = dict_basket.get(id_dir)
+        for (let i = 0; i < list_profile.length; i++){
+            id_basket_profile.delete(find_key(id_basket_profile, list_profile[i]))
+        }
+        id_basket.delete(this.parentNode.id)
+        dict_basket.delete(id_dir)
+        this.parentNode.remove() 
+        append_arrow_icon()
+    }
+
+    function priority_icon(nav)
+    {
+        let icon = document.createElement('img')
+        icon.className = "arrow"
+        if (nav == 0){
+            icon.src = "{{url_for('static', filename='img/arrow_0.png')}}"
+            icon.id = "down"
+        }
+        else
+        {
+            icon.src = "{{url_for('static', filename='img/arrow_1.png')}}"
+            icon.id = "up"
+        }
+        return icon
+    }
+
+
+    function add_arrow_icon(id_dict, lst)
+    {
+        for (let i = 0; i < lst.length; i++){
+            arrows = []
+            if (i == 0){
+                arrows.push(priority_icon(0))
+            }
+            else if (i == lst.length - 1){
+                arrows.push(priority_icon(1))
+            }
+            else{
+                arrows.push(priority_icon(0))
+                arrows.push(priority_icon(1))
+            }
+            for (let j = 0; j < arrows.length; j++) {
+                let div = find_key(id_dict, lst[i])
+                if (id_basket.has(div))
+                    if (arrows[j].id == 'up')
+                        arrows[j].addEventListener('click', up_priority_direction)
+                    else
+                        arrows[j].addEventListener('click', down_priority_direction)
+                else
+                    if (arrows[j].id == 'up')
+                        arrows[j].addEventListener('click', up_priority_profile)
+                    else
+                        arrows[j].addEventListener('click', down_priority_profile)
+                document.getElementById(div).insertBefore(arrows[j], document.getElementById(`txt_${div}`))
+            }
+        }
+    }
+    
+    function delete_arrow_icon()
+    {
+        let arrows = document.getElementsByClassName("arrow")
+        while (arrows.length > 0)
+            arrows[0].parentNode.removeChild(arrows[0])
+    }
+
+    function append_arrow_icon() {
+        delete_arrow_icon()
+        add_arrow_icon(id_basket, dict_basket.keys().toArray())
+        for (let i of dict_basket.values())
+            add_arrow_icon(id_basket_profile, i)
+    }
+
+
+    function up_priority_direction(event)
+    {
+        let div =  this.parentNode
+        let id_div = div.id
+        let keys = id_basket.keys().toArray()
+        if (keys.length > 1){
+            prev_id = keys.at(keys.indexOf(id_div) - 1)
+            div.parentNode.insertBefore(div, document.getElementById(prev_id))
+            id_basket = swap_item(id_basket, id_div, prev_id)
+            dict_basket = swap_item(dict_basket, id_basket.get(id_div), id_basket.get(prev_id))
+            append_arrow_icon()
+        }
+    }
+
+    function down_priority_direction(event)
+    {
+        let div =  this.parentNode
+        let id_div = div.id
+        let keys = id_basket.keys().toArray()
+        if (keys.length > 1){
+            next_id = keys.at(keys.indexOf(id_div) + 1)
+            div.parentNode.insertBefore(document.getElementById(next_id), div)
+            id_basket = swap_item(id_basket, id_div, next_id)
+            dict_basket = swap_item(dict_basket, id_basket.get(id_div), id_basket.get(next_id))
+            append_arrow_icon()
+        }
+    }
+
+    function up_priority_profile(event)
+    {
+        let div =  this.parentNode
+        let id_div = div.id
+        let id_profile = id_basket_profile.get(id_div)
+        let id_direction = find_key_from_list(dict_basket, id_profile)
+        let profiles = dict_basket.get(id_direction)
+        if (profiles.length > 1){
+            let cur_indx = profiles.indexOf(id_profile)
+            let prev_indx = cur_indx - 1
+            let prev_id = find_key(id_basket_profile, profiles[prev_indx])
+            div.parentNode.insertBefore(div, document.getElementById(prev_id))
+            id_basket_profile = swap_item(id_basket_profile, id_div, prev_id)
+            swap(profiles, prev_indx, cur_indx)
+            dict_basket.set(id_direction, profiles)
+            append_arrow_icon()
+        }
+    }
+
+    function down_priority_profile(event)
+    {
+        let div =  this.parentNode
+        let id_div = div.id
+        let id_profile = id_basket_profile.get(id_div)
+        let id_direction = find_key_from_list(dict_basket, id_profile)
+        let profiles = dict_basket.get(id_direction)
+        if (profiles.length > 1){
+            let cur_indx = profiles.indexOf(id_profile)
+            let next_indx = cur_indx + 1
+            let next_id = find_key(id_basket_profile, profiles[next_indx])
+            div.parentNode.insertBefore(document.getElementById(next_id), div)
+            id_basket_profile = swap_item(id_basket_profile, id_div, next_id)
+            swap(profiles, next_indx, cur_indx)
+            dict_basket.set(id_direction, profiles)
+            append_arrow_icon()
+        }
+    }
+
+    function add_obj(event)
+    {
+        let id_obj = this.id
+        let id_dir = id_direction.get(id_obj)
+        if (!is_exist_value(id_basket, id_dir)) {
+            let div = create_box(id_dir, data_direction, data_profile, id_basket_profile, true, 'right_block')
+            id_basket.set(div.id, +id_dir)
+            dict_basket.set(id_dir, dict_direction.get(id_dir))
+            ol_element_bas.appendChild(div)
+            append_arrow_icon()
+        }
+    }
+
+    function save_data(event)
+    {
+        array_id_dir = dict_basket.keys().toArray()
+        array_id_pro = dict_basket.values().toArray()
+        event.preventDefault()
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                array_id_dir,
+                array_id_pro
+            })
+            })
+    }
+
+    function delete_data(event)
+    {
+        event.preventDefault()
+        for (let div of id_basket.keys()){
+            id_dir = id_basket.get(div)
+            document.getElementById(div).remove()
+            id_basket.delete(div)
+            dict_basket.delete(id_dir)
+        }
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dict_basket)
+            })
+    }
+
+    function convert_to_map_basket(obj)
+    {
+        let result = new Map()
+        for (let i in obj)
+        {   
+            let temp = []
+            for (let j = 1; j < obj[i].length; j++)
+                temp.push(obj[i][j])
+            result.set(obj[i][0], temp)
+        }
+        return result
+    }
+
+    function convert_to_map_direction(obj)
+    {
+        let result = new Map()
+        for (let i in obj)
+        {   
+            let temp = []
+            for (let j = 0; j < obj[i].length; j++)
+                temp.push(obj[i][j])
+            result.set(+i, temp)
+        }
+        return result
+    }
+    
+
+    function find_key(dict, value) {
+        for (let [key, val] of dict.entries())
+            if (+value == +val)
+                return key;
+    }
+
+    function find_key_from_list(dict, value){
+        for (let [key, val] of dict.entries())
+            if ( val.includes(value))
+                return key
+    }
+
+    function is_exist_value(dict, value)
+    {
+        for (let [key, val] of dict.entries())
+            if (val == value)
+                return true
+        return false
+    }
+
+    function swap(arr, indx1, indx2)
+    {
+        let temp = arr[indx1]
+        arr[indx1] = arr[indx2]
+        arr[indx2] = temp
+    }
+    
+    function swap_item(dict, key1, key2)
+    {
+        let value1 = dict.get(key1)
+        let value2 = dict.get(key2)
+        let new_dict = new Map()
+        for (let key of dict.keys()){
+            if (key == key1)
+                new_dict.set(key2, value2)
+            else if (key == key2)
+                new_dict.set(key1, value1)
+            else
+                new_dict.set(key, dict.get(key))
+        }
+        return new_dict
+    }
+
+</script>
+{% endblock %}

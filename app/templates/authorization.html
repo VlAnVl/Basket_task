@@ -1,0 +1,15 @@
+{% extends 'template.html' %}
+
+{% block title %}
+<title>Поступление</title>
+{% endblock %}
+
+{% block body %}
+<form method="POST">
+    <fieldset>
+        <legend>Вход/Регистрация</legend>
+        <p><label>Идентификатор пользователя <input type="text" name="id_user" required></label></p>
+        <p><button class="bnt_enter" type="submit">Войти</button></p>
+    </fieldset>
+</form>
+{% endblock %}
